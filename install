@@ -1,0 +1,58 @@
+#!/bin/sh
+
+useradd -m -g wheel neo
+echo "Put in your new password, please"
+passwd neo
+echo "User said there to be updated packages. And there was."
+xbps-install -Syu
+xbps-install doas
+xbps-install vim
+echo "permit neo as root" >> /etc/doas.conf
+echo "ignorepkg=sudo" >> /etc/xbps.d/00-repository-main.conf
+echo "Just going to install Xorg.."
+xbps-install xorg
+echo "Done!"
+
+echo "Going to add some dotfiles and such!"
+# Hate this huge list!
+git clone "https://github.com/bakkeby/dwm-flexipatch"
+mv dwm-flexipatch ~/.config/dwm
+git clone "https://github.com/bakkeby/st-flexipatch"
+mv st-flexipatch ~/.config/st
+git clone "https://suckless.org/dmenu"
+mv dmenu ~/.config/dmenu
+
+doas xbps-install -S base-devel libX11-devel libXft-devel libXinerama-devel freetype-devel fontconfig-devel
+
+cd ~/.config/dmenu
+doas make clean install
+
+cd ~/.config/dwm
+echo "Making some changes to DWm's config.h"
+grep topbar config.h | sed -i  "s/1/0/" config.h
+grep borderpx config.h | sed -i  "s/1/2/" config.h
+
+cd ~/.config/st
+echo "Adding a patch to ST"
+grep SCROLLBACK_PATCH patches.def.h | sed -i "s/0/1/" patches.def.h
+make clean install
+
+cd ~
+git clone https://github.com/spleunker/dotfiles git/df
+mv git/df/.bashrc .
+cd git/df
+stow . -t ~/.config
+
+cd ~
+xpi wget
+wget https://gitlab.com/api/v4/projects/24386000/packages/generic/librewolf/127.0-1/LibreWolf.x86_64.AppImage
+mv LibreWolf.x86_64.AppImage librewolf
+chmod +x librewolf mv /usr/bin
+xps emacs
+xps pulseaudio
+usermod -a -G audio neo 
+echo "Done!"
+
+
+
+
